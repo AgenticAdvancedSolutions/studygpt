@@ -1,0 +1,14 @@
+# Real local environment files — do not upload
+.env
+.env.local
+.env.*
+
+# Allow the safe template file
+!.env.example
+
+# Build/dependency folders
+node_modules
+.next
+
+# Local demo quiz storage — do not upload
+data/quizzes.json
