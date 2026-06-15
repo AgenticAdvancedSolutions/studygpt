@@ -1,23 +1,51 @@
-const fs = require('fs').promises;
-const path = require('path');
-const dataFile = path.join(process.cwd(), 'data', 'quizzes.json');
-async function readData() {
-  try { return JSON.parse(await fs.readFile(dataFile, 'utf-8') || '{}'); }
-  catch { return {}; }
+const { createClient } = require('@supabase/supabase-js');
+const WebSocket = require('ws');
+
+let supabase;
+
+function getSupabase() {
+  if (supabase) return supabase;
+
+  const url = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceRoleKey) {
+    throw new Error('Supabase server environment variables are not configured.');
+  }
+
+  supabase = createClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    realtime: {
+      transport: WebSocket,
+    },
+  });
+
+  return supabase;
 }
-async function writeData(data) {
-  await fs.mkdir(path.dirname(dataFile), { recursive: true });
-  await fs.writeFile(dataFile, JSON.stringify(data, null, 2), 'utf-8');
-}
+
 async function saveQuiz(spec) {
-  const data = await readData();
-  const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  data[id] = spec;
-  await writeData(data);
-  return id;
+  const { data, error } = await getSupabase()
+    .from('quizzes')
+    .insert({ spec })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data.id;
 }
+
 async function getQuiz(id) {
-  const data = await readData();
-  return data[id] || null;
+  const { data, error } = await getSupabase()
+    .from('quizzes')
+    .select('spec')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? data.spec : null;
 }
+
 module.exports = { saveQuiz, getQuiz };
