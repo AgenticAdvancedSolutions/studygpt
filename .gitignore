@@ -1,4 +1,4 @@
-# Real local environment files — do not upload
+# Real local environment files - do not upload
 .env
 .env.local
 .env.*
@@ -10,5 +10,8 @@
 node_modules
 .next
 
-# Local demo quiz storage — do not upload
+# Vercel project metadata
+.vercel
+
+# Local demo quiz storage - do not upload
 data/quizzes.json
